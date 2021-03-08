@@ -1,0 +1,190 @@
+<script type="text/javascript" src="https://unpkg.com/vue"></script>
+<link href="https://unpkg.com/todomvc-app-css@2.1.0/index.css" rel="stylesheet"/>
+
+<section class="todoapp">
+
+    <header class="header">
+        <h1>مهامي</h1>
+
+        <input dir="auto"
+            class="new-todo"
+            autocomplete="off"
+            placeholder="ماذا تريد إنجازه؟"
+            v-model="newTask"
+            @keyup.enter="addTask()">
+   </header>
+
+    <section class="main">
+
+        <input class="toggle-all" id="toggle-all" type="checkbox" v-model="completeAll">
+        <label for="toggle-all">Mark all as complete</label>
+
+        <ul class="todo-list">
+            <li
+                class="todo"
+                v-for="todo in filteredTasks"
+                :class={completed:todo.completed,editing:todo==editTodo}>
+                <div class="view">
+                    <input class="toggle" type="checkbox" v-model="todo.completed">
+                        <label @dblclick="editTask(todo)">{{todo.title}}</label>
+                        <button class="destroy" @click="deleteTask(todo)"></button>
+                    </div>
+                    <input class="edit" type="text" v-model="todo.title" @keyup.enter="updateTask()" @keyup.esc="cancelUpdate()">
+                </li>
+            </ul>
+    </section>
+    <footer class="footer">
+                <span class="todo-count">
+                    متبقي <strong>{{remainingTasks}}</strong> {{remainingText}}  
+
+                </span>
+                <ul class="filters">
+                    <li>
+                        <a
+                            href="#"
+                            @click.prevent="visibility='all'"
+                            :class="{selected:visibility== 'all'}">الكل</a>
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            @click.prevent="visibility='active'"
+                            :class="{selected:visibility== 'active'}">غير المكتملة</a>
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            @click.prevent="visibility='completed'"
+                            :class="{selected:visibility== 'completed'}">مكتمل</a>
+                    </li>
+                </ul>
+                <button class="clear-completed" @click="removeCompleted()">
+                    مسح المكتملة
+                </button>
+            </footer>
+        
+        </section>
+        <small>Developed by: <strong>Nader Elmor</strong> 
+        </small>
+        <script type="text/javascript">
+
+            //filters
+            var filters = {
+                'all': function (todos) {
+                    return todos;
+                },
+                'active': function (todos) {
+                    return todos.filter(function (todo) {
+                        return !todo.completed;
+                    })
+                },
+                'completed': function (todos) {
+                    return todos.filter(function (todo) {
+                        return todo.completed;
+                    })
+                }
+
+            }
+
+            var todos_storage = {
+            fetch: function(){
+            var todos = JSON.parse( localStorage.getItem('todos') || '[]');
+
+            return todos;
+            },
+            save: function(todos){
+            localStorage.setItem('todos', JSON.stringify(todos) );
+            }
+  }
+            new Vue({
+
+                'el': '.todoapp',
+                data: {
+                    todos: [
+                       
+                    ],
+                    newTask: '',
+
+                    visibility: 'all',
+                    editTodo : null,
+                    todos: todos_storage.fetch()
+
+
+                },
+
+                computed: {
+                    filteredTasks: function () {
+                        return filters[this.visibility](this.todos);
+                    },
+                    remainingTasks : function(){
+                        return filters.active(this.todos).length;
+                    },
+                    remainingText : function(){
+                        if(filters.active(this.todos).length > 1)
+                        return 'مهام' ;
+
+                        return 'مهمة ';
+                    },
+                    completeAll :{
+                        //get true or false
+                       get : function (){
+                        return this.remainingTasks === 0;
+                    },
+                       set : function(value){
+                           this.todos.forEach(function(todo){
+                               todo.completed = value;
+                           });
+                       }
+                    },
+                    
+
+                },
+                methods: {
+                    deleteTask: function (todo) {
+
+                        this
+                            .todos
+                            .splice(this.todos.indexOf(todo), 1);
+                    },
+
+                    addTask: function () {
+                        //do nothing if no task there
+                        if (this.newTask == '') 
+                            return;
+                        
+                        this
+                            .todos
+                            .push({'title': this.newTask, 'completed': false});
+
+                        this.newTask = '';
+                    },
+
+                    removeCompleted: function () {
+                        this.todos = filters.active(this.todos);
+                    },
+
+                    editTask : function(todo){
+                        this.editTodo = todo;
+                        this.oldEditTodoTitle = todo.title;
+                    },
+                    updateTask : function(){
+                        if(this.editTodo.title == '')
+                        this.deleteTask(this.editTodo);
+                        this.editTodo = null;
+                    },
+
+                    cancelUpdate : function (){
+                        this.editTodo.title = this.oldEditTodoTitle;
+                        this.editTodo = null;
+                    }
+                },
+                watch: {
+                todos: {
+                    handler: function(todos){
+                    todos_storage.save(todos);
+                    },
+                    deep: true
+      }
+    }
+            });
+        </script>
